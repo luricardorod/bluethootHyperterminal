@@ -5,5 +5,6 @@
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
     <string name="devices_bounded">Dispositivos Emparejados</string>
+    <string name="bluetooth_not_supported">El dispositivo no soporta bluetooth</string>
 
 </resources>

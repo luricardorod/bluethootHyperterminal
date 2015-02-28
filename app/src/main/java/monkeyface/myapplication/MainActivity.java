@@ -2,29 +2,32 @@ package monkeyface.myapplication;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
-import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.ListAdapter;
 import android.widget.ListView;
+import android.widget.Toast;
 
+import java.util.Iterator;
 import java.util.Set;
 
 
-public class MainActivity extends ActionBarActivity {
+public class MainActivity extends ActionBarActivity implements
+        ConnectThread.BluetoothThreadCallback {
 
     int REQUEST_ENABLE_BT = 1;
 
     private ListView listDevices;
-    private Button btnSync;
-    private ListAdapter boundedDevices;
     private BluetoothAdapter mBluetoothAdapter;
+    Set<BluetoothDevice> pairedDevices;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,14 +37,29 @@ public class MainActivity extends ActionBarActivity {
 
         if (mBluetoothAdapter == null) {
             // Device does not support Bluetooth
+            Toast.makeText(this, R.string.bluetooth_not_supported, Toast.LENGTH_SHORT).show();
         }
         if (!mBluetoothAdapter.isEnabled()) {
+            //Activate bluetooth
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
         }
 
         listDevices = (ListView) findViewById(R.id.list_devices);
-        btnSync = (Button) findViewById(R.id.btn_bluetooth);
+        Button btnSync = (Button) findViewById(R.id.btn_bluetooth);
+
+        listDevices.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                if(pairedDevices!= null && !pairedDevices.isEmpty()) {
+                    Log.i(MainActivity.class.getSimpleName(), "Connecting");
+                    BluetoothDevice[] devices = new BluetoothDevice[pairedDevices.size()];
+                    pairedDevices.toArray(devices);
+
+                    connectDevice(devices[position]);
+                }
+            }
+        });
 
         btnSync.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -50,6 +68,12 @@ public class MainActivity extends ActionBarActivity {
             }
         });
 
+    }
+
+    private void connectDevice(BluetoothDevice device) {
+        ConnectThread bluetoothThreadConnection = new ConnectThread(device);
+        bluetoothThreadConnection.setCallback(this);
+        bluetoothThreadConnection.run();
     }
 
 
@@ -77,9 +101,9 @@ public class MainActivity extends ActionBarActivity {
 
     public ArrayAdapter getBoundedDevices() {
 
+        //TODO: Cambiar adaptador
         ArrayAdapter<String> adapterDevicesList = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1);
-
-        Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
+        pairedDevices = mBluetoothAdapter.getBondedDevices();
         // If there are paired devices
         if (pairedDevices.size() > 0) {
             // Loop through paired devices
@@ -89,6 +113,14 @@ public class MainActivity extends ActionBarActivity {
                 adapterDevicesList.add(device.getName() + "\n" + device.getAddress());
             }
         }
+
+        //Cancel because it will slow down the connection
+        mBluetoothAdapter.cancelDiscovery();
         return adapterDevicesList;
+    }
+
+    @Override
+    public void connectionStablished(BluetoothSocket socket) {
+        Log.i(MainActivity.class.getSimpleName(), "Socket connected: " + socket.isConnected());
     }
 }
