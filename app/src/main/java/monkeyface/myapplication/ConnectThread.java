@@ -49,7 +49,7 @@ public class ConnectThread extends Thread {
 
         // Do work to manage the connection (in a separate thread)
         if (callback != null)
-            callback.connectionStablished(mmSocket);
+            callback.connectionEstablished(mmSocket);
     }
 
     public void setCallback(BluetoothThreadCallback callback) {
@@ -66,6 +66,6 @@ public class ConnectThread extends Thread {
     }
 
     public static interface BluetoothThreadCallback{
-        public void connectionStablished(BluetoothSocket socket);
+        public void connectionEstablished(BluetoothSocket socket);
     }
 }

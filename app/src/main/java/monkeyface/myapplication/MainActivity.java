@@ -2,11 +2,9 @@ package monkeyface.myapplication;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -16,13 +14,12 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Toast;
 
-import java.util.Iterator;
 import java.util.Set;
 
 
-public class MainActivity extends ActionBarActivity implements
-        ConnectThread.BluetoothThreadCallback {
+public class MainActivity extends ActionBarActivity {
 
+    public static final String BLUETOOTH_DEVICE_KEY = "bluetooth_device";
     int REQUEST_ENABLE_BT = 1;
 
     private ListView listDevices;
@@ -40,7 +37,7 @@ public class MainActivity extends ActionBarActivity implements
             Toast.makeText(this, R.string.bluetooth_not_supported, Toast.LENGTH_SHORT).show();
         }
         if (!mBluetoothAdapter.isEnabled()) {
-            //Activate bluetooth
+             //Activate bluetooth
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
         }
@@ -51,12 +48,11 @@ public class MainActivity extends ActionBarActivity implements
         listDevices.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                if(pairedDevices!= null && !pairedDevices.isEmpty()) {
-                    Log.i(MainActivity.class.getSimpleName(), "Connecting");
+                if (pairedDevices != null && !pairedDevices.isEmpty()) {
                     BluetoothDevice[] devices = new BluetoothDevice[pairedDevices.size()];
                     pairedDevices.toArray(devices);
 
-                    connectDevice(devices[position]);
+                    initMsgActivity(devices[position]);
                 }
             }
         });
@@ -70,12 +66,11 @@ public class MainActivity extends ActionBarActivity implements
 
     }
 
-    private void connectDevice(BluetoothDevice device) {
-        ConnectThread bluetoothThreadConnection = new ConnectThread(device);
-        bluetoothThreadConnection.setCallback(this);
-        bluetoothThreadConnection.run();
+    private void initMsgActivity(BluetoothDevice device) {
+        Intent terminalIntent = new Intent(this, TerminalActivity.class);
+        terminalIntent.putExtra(BLUETOOTH_DEVICE_KEY, device);
+        startActivity(terminalIntent);
     }
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -102,7 +97,7 @@ public class MainActivity extends ActionBarActivity implements
     public ArrayAdapter getBoundedDevices() {
 
         //TODO: Cambiar adaptador
-        ArrayAdapter<String> adapterDevicesList = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1);
+        ArrayAdapter<String> adapterDevicesList = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1);
         pairedDevices = mBluetoothAdapter.getBondedDevices();
         // If there are paired devices
         if (pairedDevices.size() > 0) {
@@ -119,8 +114,4 @@ public class MainActivity extends ActionBarActivity implements
         return adapterDevicesList;
     }
 
-    @Override
-    public void connectionStablished(BluetoothSocket socket) {
-        Log.i(MainActivity.class.getSimpleName(), "Socket connected: " + socket.isConnected());
-    }
 }
